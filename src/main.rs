@@ -47,7 +47,7 @@ impl Logic {
     }
 }
 
-fn logic_check(logic_or: Logic, output: bool, val: bool) -> bool {
+fn logic_check(logic_or: &Logic, output: bool, val: bool) -> bool {
     match logic_or {
         Logic::Or => output || val,
         Logic::And => output && val,
@@ -71,44 +71,8 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                 if map.contains_key(var) {
                     let v = *map.get(var).unwrap();
                     output = match op {
-                        Comparison::Eq => {
-                            if val == v {
-                                match logic_or {
-                                    Logic::Or => {
-                                        logic_or = Logic::And;
-                                        output || true
-                                    }
-                                    Logic::And => output && true,
-                                }
-                            } else {
-                                match logic_or {
-                                    Logic::Or => {
-                                        logic_or = Logic::And;
-                                        output || false
-                                    }
-                                    Logic::And => output && false,
-                                }
-                            }
-                        },
-                        Comparison::NotEq => {
-                            if val != v {
-                                match logic_or {
-                                    Logic::Or => {
-                                        logic_or = Logic::And;
-                                        output || true
-                                    }
-                                    Logic::And => output && true,
-                                }
-                            } else {
-                                match logic_or {
-                                    Logic::Or => {
-                                        logic_or = Logic::And;
-                                        output || false
-                                    }
-                                    Logic::And => output && false,
-                                }
-                            }
-                        },
+                        Comparison::Eq => logic_check(&logic_or, output, val == v),
+                        Comparison::NotEq => logic_check(&logic_or, output, val != v),
                         Comparison::More => unimplemented!(),
                         Comparison::MoreEq =>unimplemented!(),
                         Comparison::Less => unimplemented!(),
@@ -124,10 +88,7 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
             },
             Rule::scope => {
                 let out_of_scope = eval(pair.into_inner(), &map);
-                output = match logic_or {
-                    Logic::Or => output || out_of_scope,
-                    Logic::And => output && out_of_scope
-                }
+                output = logic_check(&logic_or, output, out_of_scope)
             }
             Rule::EOI => (),
             _ => unreachable!(),
