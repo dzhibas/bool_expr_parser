@@ -10,9 +10,11 @@ use pest::{iterators::Pairs, Parser};
 #[grammar = "bool_expr.pest"]
 pub struct BoolExprParser;
 
-fn eval(expr: Pairs<Rule>, map: HashMap<&str, &str>) -> bool {
+fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
     let mut output = false;
     let mut logic_or = true;
+    let mut negate = false;
+
     for pair in expr {
         match pair.as_rule() {
             Rule::pair => {
@@ -43,18 +45,35 @@ fn eval(expr: Pairs<Rule>, map: HashMap<&str, &str>) -> bool {
                     }
                 }
             }
-            Rule::EOI => (),
             Rule::logic_op => {
                 logic_or = match pair.as_str() {
                     "and" | "AND" => false,
                     "or" | "OR" => true,
                     _ => false,
                 }
+            },
+            Rule::opNegate => {
+                negate = true;
             }
+            Rule::scope => {
+                let out_of_scope = eval(pair.into_inner(), &map);
+                output = match logic_or {
+                    true => {
+                        logic_or = false;
+                        output || out_of_scope
+                    }
+                    false => output && out_of_scope,
+                }
+            }
+            Rule::EOI => (),
             _ => unreachable!(),
         }
     }
-    output
+    if negate {
+        !output
+    } else {
+        output
+    }
 }
 
 fn main() {
@@ -63,12 +82,12 @@ fn main() {
     OR demo in ("zom", ds, 2323) 
     and a=z 
     AND !(b=3 or b=ds)"#;
-    let expression = "countryCode = NL or a=z";
+    let expression = "countryCode = NL and !(a=z or b=g)";
 
     let ast = BoolExprParser::parse(Rule::main, &expression).expect("Failed to parse");
     println!("Tree: {:#?}", ast);
 
-    let map = HashMap::from([("countryCode", "NL"), ("a", "z")]);
+    let map = HashMap::from([("countryCode", "NL"), ("b", "z")]);
 
-    println!("Evaluated answer: {:#?}", eval(ast, map));
+    println!("Evaluated answer: {:#?}", eval(ast, &map));
 }
