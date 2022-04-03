@@ -67,7 +67,7 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                 let mut inner2_rules = inner_rules.next().unwrap().into_inner();
                 let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
                 let val = inner2_rules.next().unwrap().as_str();
-                // println!("var {} {} {}", var, op, val);
+
                 if map.contains_key(var) {
                     let v = *map.get(var).unwrap();
                     output = match op {
