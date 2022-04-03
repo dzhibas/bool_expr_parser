@@ -10,9 +10,53 @@ use pest::{iterators::Pairs, Parser};
 #[grammar = "bool_expr.pest"]
 pub struct BoolExprParser;
 
+enum Comparison {
+    Eq,
+    More,
+    Less,
+    MoreEq,
+    LessEq,
+    NotEq
+}
+impl Comparison {
+    fn from_str(s: &str) -> Self {
+        match s {
+            "==" | "=" => Comparison::Eq,
+            ">" => Comparison::More,
+            ">=" => Comparison::MoreEq,
+            "<" => Comparison::Less,
+            "<=" => Comparison::LessEq,
+            "!=" => Comparison::NotEq,
+            _ => unreachable!()
+        }
+    }
+}
+
+enum Logic {
+    And,
+    Or
+}
+
+impl Logic {
+    fn from_str(logic: &str) -> Self {
+        match logic.to_lowercase().as_str() {
+            "and" => Logic::And,
+            "or" => Logic::Or,
+            _ => unreachable!()
+        }
+    }
+}
+
+fn logic_check(logic_or: Logic, output: bool, val: bool) -> bool {
+    match logic_or {
+        Logic::Or => output || val,
+        Logic::And => output && val,
+    }
+}
+
 fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
     let mut output = false;
-    let mut logic_or = true;
+    let mut logic_or = Logic::Or;
     let mut negate = false;
 
     for pair in expr {
@@ -21,48 +65,68 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                 let mut inner_rules = pair.into_inner();
                 let var = inner_rules.next().unwrap().as_str();
                 let mut inner2_rules = inner_rules.next().unwrap().into_inner();
-                let op = inner2_rules.next().unwrap().as_str();
+                let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
                 let val = inner2_rules.next().unwrap().as_str();
                 // println!("var {} {} {}", var, op, val);
                 if map.contains_key(var) {
                     let v = *map.get(var).unwrap();
-                    if val == v {
-                        output = match logic_or {
-                            true => {
-                                logic_or = false;
-                                output || true
+                    output = match op {
+                        Comparison::Eq => {
+                            if val == v {
+                                match logic_or {
+                                    Logic::Or => {
+                                        logic_or = Logic::And;
+                                        output || true
+                                    }
+                                    Logic::And => output && true,
+                                }
+                            } else {
+                                match logic_or {
+                                    Logic::Or => {
+                                        logic_or = Logic::And;
+                                        output || false
+                                    }
+                                    Logic::And => output && false,
+                                }
                             }
-                            false => output && true,
-                        }
-                    } else {
-                        output = match logic_or {
-                            true => {
-                                logic_or = false;
-                                output || false
+                        },
+                        Comparison::NotEq => {
+                            if val != v {
+                                match logic_or {
+                                    Logic::Or => {
+                                        logic_or = Logic::And;
+                                        output || true
+                                    }
+                                    Logic::And => output && true,
+                                }
+                            } else {
+                                match logic_or {
+                                    Logic::Or => {
+                                        logic_or = Logic::And;
+                                        output || false
+                                    }
+                                    Logic::And => output && false,
+                                }
                             }
-                            false => output && false,
-                        }
+                        },
+                        Comparison::More => unimplemented!(),
+                        Comparison::MoreEq =>unimplemented!(),
+                        Comparison::Less => unimplemented!(),
+                        Comparison::LessEq => unimplemented!(),
                     }
                 }
             }
             Rule::logic_op => {
-                logic_or = match pair.as_str() {
-                    "and" | "AND" => false,
-                    "or" | "OR" => true,
-                    _ => false,
-                }
+                logic_or = Logic::from_str(pair.as_str());
             },
             Rule::opNegate => {
                 negate = true;
-            }
+            },
             Rule::scope => {
                 let out_of_scope = eval(pair.into_inner(), &map);
                 output = match logic_or {
-                    true => {
-                        logic_or = false;
-                        output || out_of_scope
-                    }
-                    false => output && out_of_scope,
+                    Logic::Or => output || out_of_scope,
+                    Logic::And => output && out_of_scope
                 }
             }
             Rule::EOI => (),
@@ -135,5 +199,12 @@ mod tests {
     fn test_logic_or() {
         let map = HashMap::from([("a", "XXX"), ("c", "d")]);
         assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b or c=d").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_not_equal_pair() {
+        let map = HashMap::from([("a", "b"), ("c", "d")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a!=c").expect("Parse error"), &map), true);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a==b").expect("Parse error"), &map), true);
     }
 }
