@@ -23,7 +23,7 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                 let mut inner2_rules = inner_rules.next().unwrap().into_inner();
                 let op = inner2_rules.next().unwrap().as_str();
                 let val = inner2_rules.next().unwrap().as_str();
-                println!("var {} {} {}", var, op, val);
+                // println!("var {} {} {}", var, op, val);
                 if map.contains_key(var) {
                     let v = *map.get(var).unwrap();
                     if val == v {
@@ -90,4 +90,50 @@ fn main() {
     let map = HashMap::from([("countryCode", "NL"), ("b", "z")]);
 
     println!("Evaluated answer: {:#?}", eval(ast, &map));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_negate_test() {
+        let map = HashMap::from([("countryCode", "NL"), ("b", "z")]);
+
+        let ast = BoolExprParser::parse(Rule::main, "countryCode = NL and !(a=z or b=g)").expect("Failed to parse");
+        assert_eq!(eval(ast, &map), true);
+
+        let ast = BoolExprParser::parse(Rule::main, "countryCode = NL and (a=z or b=g)").expect("Failed to parse");
+        assert_eq!(eval(ast, &map), false);
+    }
+
+    #[test]
+    fn test_scopes() {
+        let map = HashMap::from([("b", "a"), ("z", "d")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "(a=b or b=a) AND (z=d or b=d)").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_simple_pair_test() {
+        let map = HashMap::from([("countryCode", "DE"), ("b", "z")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "countryCode=DE").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_variable_with_underscore() {
+        let map = HashMap::from([("country_code", "IL"), ("b", "z")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "country_code =   IL").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_logic_and() {
+        let map = HashMap::from([("a", "b"), ("c", "d")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b and c=d").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_logic_or() {
+        let map = HashMap::from([("a", "XXX"), ("c", "d")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b or c=d").expect("Parse error"), &map), true);
+    }
 }

@@ -1,6 +1,6 @@
 WHITESPACE=_{" "|"\t"|"\r"|"\n"}
 quotes = _{"\"" | "'"}
-var = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+var = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC|"_")* }
 string = { ASCII_ALPHANUMERIC+ }
 str = @{ ASCII_ALPHANUMERIC+ }
 string_value = { ((quotes ~ string ~ quotes) | str) }
