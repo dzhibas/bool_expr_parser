@@ -78,6 +78,8 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                         Comparison::Less => unimplemented!(),
                         Comparison::LessEq => unimplemented!(),
                     }
+                } else {
+                    output = false;
                 }
             }
             Rule::logic_op => {
@@ -167,5 +169,11 @@ mod tests {
         let map = HashMap::from([("a", "b"), ("c", "d")]);
         assert_eq!(eval(BoolExprParser::parse(Rule::main, "a!=c").expect("Parse error"), &map), true);
         assert_eq!(eval(BoolExprParser::parse(Rule::main, "a==b").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_hash_map_does_not_contain() {
+        let map = HashMap::from([("a", "b"), ("c", "d")]);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b AND xxx=ddd").expect("Parse error"), &map), false);
     }
 }
