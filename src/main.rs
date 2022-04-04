@@ -106,9 +106,17 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                             if map.contains_key(var) {
                                 let v = *map.get(var).unwrap();
                                 println!("Checking if {} contains {} - answer: {:#?}", var, v, values.contains(&v));
-                                logic_check(&logic_or, output, values.contains(&v))
+                                match op {
+                                    Comparison::In => logic_check(&logic_or, output, values.contains(&v)),
+                                    Comparison::NotIn =>  logic_check(&logic_or, output, !values.contains(&v)),
+                                    _ => unreachable!()
+                                }
                             } else {
-                                logic_check(&logic_or, output, false)
+                                match op {
+                                    Comparison::In => logic_check(&logic_or, output, false),
+                                    Comparison::NotIn =>  logic_check(&logic_or, output, true),
+                                    _ => unreachable!()
+                                }
                             }
                         } else {
                             unreachable!();
@@ -217,7 +225,14 @@ mod tests {
     #[test]
     fn test_simple_array() {
         let map = HashMap::from([("a", "d"), ("b", "c")]);
-        let ast = BoolExprParser::parse(Rule::main, "b=c or a in (a,b,c,d)").expect("Parse error");
+        let ast = BoolExprParser::parse(Rule::main, "b=c AND a in (a,b,c,d)").expect("Parse error");
+        assert_eq!(eval(ast, &map), true);
+    }
+
+    #[test]
+    fn test_simple_array_does_not_contain() {
+        let map = HashMap::from([("a", "X"), ("b", "c")]);
+        let ast = BoolExprParser::parse(Rule::main, "b=c AND a not in (a,b,c,d)").expect("Parse error");
         assert_eq!(eval(ast, &map), true);
     }
 }
