@@ -76,7 +76,7 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                     Rule::value_expr => {
                         let mut inner2_rules = expression.into_inner();
                         let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
-                        let val = inner2_rules.next().unwrap().as_str();
+                        let val = inner2_rules.next().unwrap().into_inner().next().unwrap().as_str();
 
                         if map.contains_key(var) {
                             let v = *map.get(var).unwrap();
@@ -102,7 +102,9 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                         if inner3_rules.as_rule() == Rule::array {
                             let mut values: Vec<&str> = Vec::new();
                             for p in inner3_rules.into_inner() {
-                                values.push(p.as_str());
+                                let rule = p.as_rule();
+                                let inner3_value = p.as_str();
+                                values.push(inner3_value);
                             }
                             if map.contains_key(var) {
                                 let v = *map.get(var).unwrap();
