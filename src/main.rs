@@ -18,8 +18,9 @@ enum Comparison {
     LessEq,
     NotEq,
     In,
-    NotIn
+    NotIn,
 }
+
 impl Comparison {
     fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
@@ -31,14 +32,14 @@ impl Comparison {
             "!=" => Comparison::NotEq,
             "in" => Comparison::In,
             "not in" => Comparison::NotIn,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
 
 enum Logic {
     And,
-    Or
+    Or,
 }
 
 impl Logic {
@@ -46,7 +47,7 @@ impl Logic {
         match logic.to_lowercase().as_str() {
             "and" => Logic::And,
             "or" => Logic::Or,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -76,14 +77,14 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                         let mut inner2_rules = expression.into_inner();
                         let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
                         let val = inner2_rules.next().unwrap().as_str();
-        
+
                         if map.contains_key(var) {
                             let v = *map.get(var).unwrap();
                             match op {
                                 Comparison::Eq => logic_check(&logic_or, output, val == v),
                                 Comparison::NotEq => logic_check(&logic_or, output, val != v),
                                 Comparison::More => unimplemented!(),
-                                Comparison::MoreEq =>unimplemented!(),
+                                Comparison::MoreEq => unimplemented!(),
                                 Comparison::Less => unimplemented!(),
                                 Comparison::LessEq => unimplemented!(),
                                 Comparison::In => unimplemented!(),
@@ -92,46 +93,54 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                         } else {
                             logic_check(&logic_or, output, false)
                         }
-                    },
+                    }
                     Rule::array_expr => {
                         let mut inner2_rules = expression.into_inner();
                         // in | not in
                         let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
                         let mut inner3_rules = inner2_rules.next().unwrap();
                         if inner3_rules.as_rule() == Rule::array {
-                            let mut values:Vec<&str> = Vec::new();
+                            let mut values: Vec<&str> = Vec::new();
                             for p in inner3_rules.into_inner() {
                                 values.push(p.as_str());
                             }
                             if map.contains_key(var) {
                                 let v = *map.get(var).unwrap();
-                                println!("Checking if {} contains {} - answer: {:#?}", var, v, values.contains(&v));
+                                println!(
+                                    "Checking if {} contains {} - answer: {:#?}",
+                                    var,
+                                    v,
+                                    values.contains(&v)
+                                );
                                 match op {
-                                    Comparison::In => logic_check(&logic_or, output, values.contains(&v)),
-                                    Comparison::NotIn =>  logic_check(&logic_or, output, !values.contains(&v)),
-                                    _ => unreachable!()
+                                    Comparison::In => {
+                                        logic_check(&logic_or, output, values.contains(&v))
+                                    }
+                                    Comparison::NotIn => {
+                                        logic_check(&logic_or, output, !values.contains(&v))
+                                    }
+                                    _ => unreachable!(),
                                 }
                             } else {
                                 match op {
                                     Comparison::In => logic_check(&logic_or, output, false),
-                                    Comparison::NotIn =>  logic_check(&logic_or, output, true),
-                                    _ => unreachable!()
+                                    Comparison::NotIn => logic_check(&logic_or, output, true),
+                                    _ => unreachable!(),
                                 }
                             }
                         } else {
                             unreachable!();
                         }
-        
-                    },
-                    _ => unreachable!()
+                    }
+                    _ => unreachable!(),
                 }
             }
             Rule::logic_op => {
                 logic_or = Logic::from_str(pair.as_str());
-            },
+            }
             Rule::opNegate => {
                 negate = true;
-            },
+            }
             Rule::scope => {
                 let out_of_scope = eval(pair.into_inner(), &map);
                 output = logic_check(&logic_or, output, out_of_scope)
@@ -166,60 +175,117 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_negate_test() {
         let map = HashMap::from([("countryCode", "NL"), ("b", "z")]);
 
-        let ast = BoolExprParser::parse(Rule::main, "countryCode = NL and !(a=z or b=g)").expect("Failed to parse");
+        let ast = BoolExprParser::parse(Rule::main, "countryCode = NL and !(a=z or b=g)")
+            .expect("Failed to parse");
         assert_eq!(eval(ast, &map), true);
 
-        let ast = BoolExprParser::parse(Rule::main, "countryCode = NL and (a=z or b=g)").expect("Failed to parse");
+        let ast = BoolExprParser::parse(Rule::main, "countryCode = NL and (a=z or b=g)")
+            .expect("Failed to parse");
         assert_eq!(eval(ast, &map), false);
     }
 
     #[test]
     fn test_scopes() {
         let map = HashMap::from([("b", "a"), ("z", "d")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "(a=b or b=a) AND (z=d or b=d)").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "(a=b or b=a) AND (z=d or b=d)")
+                    .expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
     fn test_simple_pair_test() {
         let map = HashMap::from([("countryCode", "DE"), ("b", "z")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "countryCode=DE").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "countryCode=DE").expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
     fn test_variable_with_underscore() {
         let map = HashMap::from([("country_code", "IL"), ("b", "z")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "country_code =   IL").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "country_code =   IL").expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
     fn test_logic_and() {
         let map = HashMap::from([("a", "b"), ("c", "d")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b and c=d").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "a=b and c=d").expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
     fn test_logic_or() {
         let map = HashMap::from([("a", "XXX"), ("c", "d")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b or c=d").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "a=b or c=d").expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
     fn test_not_equal_pair() {
         let map = HashMap::from([("a", "b"), ("c", "d")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a!=c").expect("Parse error"), &map), true);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a==b").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "a!=c").expect("Parse error"),
+                &map
+            ),
+            true
+        );
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "a==b").expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
     fn test_hash_map_does_not_contain() {
         let map = HashMap::from([("a", "b"), ("c", "d")]);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b AND xxx=ddd").expect("Parse error"), &map), false);
-        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b or xxx=ddd").expect("Parse error"), &map), true);
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "a=b AND xxx=ddd").expect("Parse error"),
+                &map
+            ),
+            false
+        );
+        assert_eq!(
+            eval(
+                BoolExprParser::parse(Rule::main, "a=b or xxx=ddd").expect("Parse error"),
+                &map
+            ),
+            true
+        );
     }
 
     #[test]
@@ -232,7 +298,24 @@ mod tests {
     #[test]
     fn test_simple_array_does_not_contain() {
         let map = HashMap::from([("a", "X"), ("b", "c")]);
-        let ast = BoolExprParser::parse(Rule::main, "b=c AND a not in (a,b,c,d)").expect("Parse error");
+        let ast =
+            BoolExprParser::parse(Rule::main, "b=c AND a not in (a,b,c,d)").expect("Parse error");
+        assert_eq!(eval(ast, &map), true);
+    }
+    #[test]
+    fn test_complex_array_test() {
+        let map = HashMap::from([("a", "b"), ("c", "something more")]);
+        let ast =
+            BoolExprParser::parse(Rule::main, "a=b AND (b=c OR c in (d,e,'something more',h))")
+                .expect("Parse error");
+        assert_eq!(eval(ast, &map), true);
+    }
+
+    #[test]
+    fn test_complex_string_check() {
+        let map = HashMap::from([("a", "b"), ("c", "something more")]);
+        let ast =
+            BoolExprParser::parse(Rule::main, "a=b and c='something more'").expect("Parse error");
         assert_eq!(eval(ast, &map), true);
     }
 }
