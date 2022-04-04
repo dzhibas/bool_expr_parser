@@ -17,21 +17,31 @@ enum Comparison {
     MoreEq,
     LessEq,
     NotEq,
-    In,
-    NotIn,
 }
 
 impl Comparison {
     fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
+        match s {
             "==" | "=" => Comparison::Eq,
             ">" => Comparison::More,
             ">=" => Comparison::MoreEq,
             "<" => Comparison::Less,
             "<=" => Comparison::LessEq,
             "!=" => Comparison::NotEq,
-            "in" => Comparison::In,
-            "not in" => Comparison::NotIn,
+            _ => unreachable!(),
+        }
+    }
+}
+enum ArrayComparison {
+    In,
+    NotIn,
+}
+
+impl ArrayComparison {
+    fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "in" => ArrayComparison::In,
+            "not in" => ArrayComparison::NotIn,
             _ => unreachable!(),
         }
     }
@@ -87,8 +97,6 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                 Comparison::MoreEq => unimplemented!(),
                                 Comparison::Less => unimplemented!(),
                                 Comparison::LessEq => unimplemented!(),
-                                Comparison::In => unimplemented!(),
-                                Comparison::NotIn => unimplemented!(),
                             }
                         } else {
                             logic_check(&logic_or, output, false)
@@ -97,7 +105,7 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                     Rule::array_expr => {
                         let mut inner2_rules = expression.into_inner();
                         // in | not in
-                        let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
+                        let op = ArrayComparison::from_str(inner2_rules.next().unwrap().as_str());
                         let inner3_rules = inner2_rules.next().unwrap();
                         if inner3_rules.as_rule() == Rule::array {
                             let mut values: Vec<&str> = Vec::new();
@@ -114,19 +122,17 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                     values.contains(&v)
                                 );
                                 match op {
-                                    Comparison::In => {
+                                    ArrayComparison::In => {
                                         logic_check(&logic_or, output, values.contains(&v))
                                     }
-                                    Comparison::NotIn => {
+                                    ArrayComparison::NotIn => {
                                         logic_check(&logic_or, output, !values.contains(&v))
                                     }
-                                    _ => unreachable!(),
                                 }
                             } else {
                                 match op {
-                                    Comparison::In => logic_check(&logic_or, output, false),
-                                    Comparison::NotIn => logic_check(&logic_or, output, true),
-                                    _ => unreachable!(),
+                                    ArrayComparison::In => logic_check(&logic_or, output, false),
+                                    ArrayComparison::NotIn => logic_check(&logic_or, output, true),
                                 }
                             }
                         } else {
