@@ -16,17 +16,21 @@ enum Comparison {
     Less,
     MoreEq,
     LessEq,
-    NotEq
+    NotEq,
+    In,
+    NotIn
 }
 impl Comparison {
     fn from_str(s: &str) -> Self {
-        match s {
+        match s.to_lowercase().as_str() {
             "==" | "=" => Comparison::Eq,
             ">" => Comparison::More,
             ">=" => Comparison::MoreEq,
             "<" => Comparison::Less,
             "<=" => Comparison::LessEq,
             "!=" => Comparison::NotEq,
+            "in" => Comparison::In,
+            "not in" => Comparison::NotIn,
             _ => unreachable!()
         }
     }
@@ -63,23 +67,55 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
         match pair.as_rule() {
             Rule::pair => {
                 let mut inner_rules = pair.into_inner();
+                // value_expr|array_expr
                 let var = inner_rules.next().unwrap().as_str();
-                let mut inner2_rules = inner_rules.next().unwrap().into_inner();
-                let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
-                let val = inner2_rules.next().unwrap().as_str();
+                let expression = inner_rules.next().unwrap();
 
-                if map.contains_key(var) {
-                    let v = *map.get(var).unwrap();
-                    output = match op {
-                        Comparison::Eq => logic_check(&logic_or, output, val == v),
-                        Comparison::NotEq => logic_check(&logic_or, output, val != v),
-                        Comparison::More => unimplemented!(),
-                        Comparison::MoreEq =>unimplemented!(),
-                        Comparison::Less => unimplemented!(),
-                        Comparison::LessEq => unimplemented!(),
-                    }
-                } else {
-                    output = false;
+                output = match expression.as_rule() {
+                    Rule::value_expr => {
+                        let mut inner2_rules = expression.into_inner();
+                        let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
+                        let val = inner2_rules.next().unwrap().as_str();
+        
+                        if map.contains_key(var) {
+                            let v = *map.get(var).unwrap();
+                            match op {
+                                Comparison::Eq => logic_check(&logic_or, output, val == v),
+                                Comparison::NotEq => logic_check(&logic_or, output, val != v),
+                                Comparison::More => unimplemented!(),
+                                Comparison::MoreEq =>unimplemented!(),
+                                Comparison::Less => unimplemented!(),
+                                Comparison::LessEq => unimplemented!(),
+                                Comparison::In => unimplemented!(),
+                                Comparison::NotIn => unimplemented!(),
+                            }
+                        } else {
+                            logic_check(&logic_or, output, false)
+                        }
+                    },
+                    Rule::array_expr => {
+                        let mut inner2_rules = expression.into_inner();
+                        // in | not in
+                        let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
+                        let mut inner3_rules = inner2_rules.next().unwrap();
+                        if inner3_rules.as_rule() == Rule::array {
+                            let mut values:Vec<&str> = Vec::new();
+                            for p in inner3_rules.into_inner() {
+                                values.push(p.as_str());
+                            }
+                            if map.contains_key(var) {
+                                let v = *map.get(var).unwrap();
+                                println!("Checking if {} contains {} - answer: {:#?}", var, v, values.contains(&v));
+                                logic_check(&logic_or, output, values.contains(&v))
+                            } else {
+                                logic_check(&logic_or, output, false)
+                            }
+                        } else {
+                            unreachable!();
+                        }
+        
+                    },
+                    _ => unreachable!()
                 }
             }
             Rule::logic_op => {
@@ -175,5 +211,13 @@ mod tests {
     fn test_hash_map_does_not_contain() {
         let map = HashMap::from([("a", "b"), ("c", "d")]);
         assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b AND xxx=ddd").expect("Parse error"), &map), false);
+        assert_eq!(eval(BoolExprParser::parse(Rule::main, "a=b or xxx=ddd").expect("Parse error"), &map), true);
+    }
+
+    #[test]
+    fn test_simple_array() {
+        let map = HashMap::from([("a", "d"), ("b", "c")]);
+        let ast = BoolExprParser::parse(Rule::main, "b=c or a in (a,b,c,d)").expect("Parse error");
+        assert_eq!(eval(ast, &map), true);
     }
 }
