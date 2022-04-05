@@ -4,7 +4,7 @@ extern crate pest_derive;
 
 use std::collections::HashMap;
 
-use pest::{iterators::Pairs, Parser};
+use pest::{iterators::Pairs};
 
 #[derive(Parser)]
 #[grammar = "bool_expr.pest"]
