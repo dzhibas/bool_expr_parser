@@ -86,7 +86,13 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                     Rule::value_expr => {
                         let mut inner2_rules = expression.into_inner();
                         let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
-                        let val = inner2_rules.next().unwrap().into_inner().next().unwrap().as_str();
+                        let val = inner2_rules
+                            .next()
+                            .unwrap()
+                            .into_inner()
+                            .next()
+                            .unwrap()
+                            .as_str();
 
                         if map.contains_key(var) {
                             let v = *map.get(var).unwrap();
