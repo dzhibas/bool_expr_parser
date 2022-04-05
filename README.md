@@ -1,9 +1,11 @@
-# bool expr parser
+# Bool Expr Parser lib
 
-writing bool expresion parser and eval function for flag rules
+writing bool expresion parser and eval function for feature flagging - flipper
 
 # TODO
 
-- [ ] need to implement op (>, <, <=, >=) (fix tests: test_more_comparison)
+- [x] need to implement op (>, <, <=, >=)
 - [x] implement arrays IN and negated NOT IN
-- [x] implement str and string_str (test_complex_string_check, test_complex_array_test)
+- [x] implement str and string_str
+- [ ] cleanup code
+- [ ] make reusable library

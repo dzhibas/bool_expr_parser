@@ -9,7 +9,7 @@ op_array = { (^"not in"|^"in") }
 array = { "(" ~ (number|string_value) ~ ("," ~ (number|string_value))* ~")"}
 array_expr = { op_array ~ array }
 value = { number | string_value}
-op = { "==" | "=" | ">" | "<" | "<=" | ">=" | "!=" }
+op = { "==" | "=" | "<=" | ">=" | ">" | "<" | "!=" }
 value_expr = { op ~ value }
 pair = { var ~ (value_expr|array_expr) }
 logic_op = @{"and"|"AND"|"or"|"OR"}

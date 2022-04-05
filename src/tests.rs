@@ -143,6 +143,102 @@ fn test_complex_string_check() {
 #[test]
 fn test_more_comparison() {
     let map = HashMap::from([("a", "10"), ("b", "something more")]);
-    let ast = BoolExprParser::parse(Rule::main, "a>5 and c='something more'").expect("Parse error");
+    let ast = BoolExprParser::parse(Rule::main, "a>5 and b in (try, 'something more')")
+        .expect("Parse error");
     assert_eq!(eval(ast, &map), true);
+}
+
+#[test]
+fn test_more_comparison_string() {
+    let map = HashMap::from([("a", "10"), ("b", "something more")]);
+    let ast = BoolExprParser::parse(Rule::main, "a>'demo' and b in (try, 'something more')")
+        .expect("Parse error");
+    assert_eq!(eval(ast, &map), false);
+}
+
+#[test]
+fn test_more_or_equal() {
+    let map = HashMap::from([("a", "10")]);
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a>=10 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        true
+    );
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a>=9 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        true
+    );
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a>=12 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        false
+    );
+}
+
+#[test]
+fn test_less() {
+    let map = HashMap::from([("a", "10")]);
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a<11 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        true
+    );
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a<10 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        false
+    );
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a<9 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        false
+    );
+}
+
+#[test]
+fn test_less_or_equal() {
+    let map = HashMap::from([("a", "10")]);
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a<=11 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        true
+    );
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a<=10 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        true
+    );
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a<=9 or b in (try, 'something more')")
+                .expect("Parse error"),
+            &map
+        ),
+        false
+    );
 }

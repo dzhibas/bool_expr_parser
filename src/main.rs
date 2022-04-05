@@ -78,7 +78,6 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
         match pair.as_rule() {
             Rule::pair => {
                 let mut inner_rules = pair.into_inner();
-                // value_expr|array_expr
                 let var = inner_rules.next().unwrap().as_str();
                 let expression = inner_rules.next().unwrap();
 
@@ -86,23 +85,59 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                     Rule::value_expr => {
                         let mut inner2_rules = expression.into_inner();
                         let op = Comparison::from_str(inner2_rules.next().unwrap().as_str());
-                        let val = inner2_rules
-                            .next()
-                            .unwrap()
-                            .into_inner()
-                            .next()
-                            .unwrap()
-                            .as_str();
+                        let pair_rule = inner2_rules.next().unwrap().into_inner().next().unwrap();
+                        let rule = pair_rule.as_rule();
+                        let val = pair_rule.as_str();
 
                         if map.contains_key(var) {
                             let v = *map.get(var).unwrap();
                             match op {
                                 Comparison::Eq => logic_check(&logic_or, output, val == v),
                                 Comparison::NotEq => logic_check(&logic_or, output, val != v),
-                                Comparison::More => unimplemented!(),
-                                Comparison::MoreEq => unimplemented!(),
-                                Comparison::Less => unimplemented!(),
-                                Comparison::LessEq => unimplemented!(),
+                                Comparison::More => match rule {
+                                    Rule::number => {
+                                        let v1: i64 = v
+                                            .to_string()
+                                            .parse()
+                                            .expect("cannot parse string to int");
+                                        let v2: i64 = val.to_string().parse().unwrap();
+                                        logic_check(&logic_or, output, v1 > v2)
+                                    }
+                                    _ => logic_check(&logic_or, output, false),
+                                },
+                                Comparison::MoreEq => match rule {
+                                    Rule::number => {
+                                        let v1: i64 = v
+                                            .to_string()
+                                            .parse()
+                                            .expect("cannot parse string to int");
+                                        let v2: i64 = val.to_string().parse().unwrap();
+                                        logic_check(&logic_or, output, v1 >= v2)
+                                    }
+                                    _ => logic_check(&logic_or, output, false),
+                                },
+                                Comparison::Less => match rule {
+                                    Rule::number => {
+                                        let v1: i64 = v
+                                            .to_string()
+                                            .parse()
+                                            .expect("cannot parse string to int");
+                                        let v2: i64 = val.to_string().parse().unwrap();
+                                        logic_check(&logic_or, output, v1 < v2)
+                                    }
+                                    _ => logic_check(&logic_or, output, false),
+                                },
+                                Comparison::LessEq => match rule {
+                                    Rule::number => {
+                                        let v1: i64 = v
+                                            .to_string()
+                                            .parse()
+                                            .expect("cannot parse string to int");
+                                        let v2: i64 = val.to_string().parse().unwrap();
+                                        logic_check(&logic_or, output, v1 <= v2)
+                                    }
+                                    _ => logic_check(&logic_or, output, false),
+                                },
                             }
                         } else {
                             logic_check(&logic_or, output, false)
