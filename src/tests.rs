@@ -242,3 +242,16 @@ fn test_less_or_equal() {
         false
     );
 }
+
+#[test]
+fn test_ugly_massive_test() {
+    let expression = r#"as22 IN (a,v,'c d',213) 
+            or (a!=2 and ds='seo ew') 
+            OR demo in ("zom", ds, 2323) 
+            and a=z 
+            AND !(b=3 or b=ds)"#;
+
+    let ast = BoolExprParser::parse(Rule::main, &expression).expect("Failed to parse");
+    let map = HashMap::from([("as22", "c d"), ("ds", "seo ew"), ("a", "z"), ("b", "ss")]);
+    assert_eq!(eval(ast, &map), true);
+}

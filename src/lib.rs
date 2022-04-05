@@ -69,7 +69,32 @@ fn logic_check(logic_or: &Logic, output: bool, val: bool) -> bool {
     }
 }
 
-fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
+fn comparison_helper(
+    logic_or: &Logic,
+    output: bool,
+    v: &str,
+    val: &str,
+    rule: Rule,
+    comp: Comparison,
+) -> bool {
+    let out = match rule {
+        Rule::number => {
+            let v1: i64 = v.to_string().parse().expect("cannot parse string to int");
+            let v2: i64 = val.to_string().parse().unwrap();
+            match comp {
+                Comparison::More => v1 > v2,
+                Comparison::MoreEq => v1 >= v2,
+                Comparison::Less => v1 < v2,
+                Comparison::LessEq => v1 <= v2,
+                _ => false,
+            }
+        }
+        _ => false,
+    };
+    logic_check(&logic_or, output, out)
+}
+
+pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
     let mut output = false;
     let mut logic_or = Logic::Or;
     let mut negate = false;
@@ -94,50 +119,38 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                             match op {
                                 Comparison::Eq => logic_check(&logic_or, output, val == v),
                                 Comparison::NotEq => logic_check(&logic_or, output, val != v),
-                                Comparison::More => match rule {
-                                    Rule::number => {
-                                        let v1: i64 = v
-                                            .to_string()
-                                            .parse()
-                                            .expect("cannot parse string to int");
-                                        let v2: i64 = val.to_string().parse().unwrap();
-                                        logic_check(&logic_or, output, v1 > v2)
-                                    }
-                                    _ => logic_check(&logic_or, output, false),
-                                },
-                                Comparison::MoreEq => match rule {
-                                    Rule::number => {
-                                        let v1: i64 = v
-                                            .to_string()
-                                            .parse()
-                                            .expect("cannot parse string to int");
-                                        let v2: i64 = val.to_string().parse().unwrap();
-                                        logic_check(&logic_or, output, v1 >= v2)
-                                    }
-                                    _ => logic_check(&logic_or, output, false),
-                                },
-                                Comparison::Less => match rule {
-                                    Rule::number => {
-                                        let v1: i64 = v
-                                            .to_string()
-                                            .parse()
-                                            .expect("cannot parse string to int");
-                                        let v2: i64 = val.to_string().parse().unwrap();
-                                        logic_check(&logic_or, output, v1 < v2)
-                                    }
-                                    _ => logic_check(&logic_or, output, false),
-                                },
-                                Comparison::LessEq => match rule {
-                                    Rule::number => {
-                                        let v1: i64 = v
-                                            .to_string()
-                                            .parse()
-                                            .expect("cannot parse string to int");
-                                        let v2: i64 = val.to_string().parse().unwrap();
-                                        logic_check(&logic_or, output, v1 <= v2)
-                                    }
-                                    _ => logic_check(&logic_or, output, false),
-                                },
+                                Comparison::More => comparison_helper(
+                                    &logic_or,
+                                    output,
+                                    v,
+                                    val,
+                                    rule,
+                                    Comparison::More,
+                                ),
+                                Comparison::MoreEq => comparison_helper(
+                                    &logic_or,
+                                    output,
+                                    v,
+                                    val,
+                                    rule,
+                                    Comparison::MoreEq,
+                                ),
+                                Comparison::Less => comparison_helper(
+                                    &logic_or,
+                                    output,
+                                    v,
+                                    val,
+                                    rule,
+                                    Comparison::Less,
+                                ),
+                                Comparison::LessEq => comparison_helper(
+                                    &logic_or,
+                                    output,
+                                    v,
+                                    val,
+                                    rule,
+                                    Comparison::LessEq,
+                                ),
                             }
                         } else {
                             logic_check(&logic_or, output, false)
@@ -145,7 +158,6 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                     }
                     Rule::array_expr => {
                         let mut inner2_rules = expression.into_inner();
-                        // in | not in
                         let op = ArrayComparison::from_str(inner2_rules.next().unwrap().as_str());
                         let inner3_rules = inner2_rules.next().unwrap();
                         if inner3_rules.as_rule() == Rule::array {
@@ -156,12 +168,6 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                             }
                             if map.contains_key(var) {
                                 let v = *map.get(var).unwrap();
-                                println!(
-                                    "Checking if {} contains {} - answer: {:#?}",
-                                    var,
-                                    v,
-                                    values.contains(&v)
-                                );
                                 match op {
                                     ArrayComparison::In => {
                                         logic_check(&logic_or, output, values.contains(&v))
@@ -202,22 +208,6 @@ fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
     } else {
         output
     }
-}
-
-fn main() {
-    let _expression = r#"as22 IN (a,v,'c d',213) 
-    or (a!=2 and ds='seo ew') 
-    OR demo in ("zom", ds, 2323) 
-    and a=z 
-    AND !(b=3 or b=ds)"#;
-    let expression = "countryCode = NL and !(a=z or b=g)";
-
-    let ast = BoolExprParser::parse(Rule::main, &expression).expect("Failed to parse");
-    println!("Tree: {:#?}", ast);
-
-    let map = HashMap::from([("countryCode", "NL"), ("b", "z")]);
-
-    println!("Evaluated answer: {:#?}", eval(ast, &map));
 }
 
 #[cfg(test)]
