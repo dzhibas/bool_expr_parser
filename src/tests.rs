@@ -256,3 +256,27 @@ fn test_ugly_massive_test() {
     let map = HashMap::from([("as22", "c d"), ("ds", "seo ew"), ("a", "z"), ("b", "ss")]);
     assert_eq!(eval(ast, &map), true);
 }
+
+#[test]
+fn test_in_readme_documentation() {
+    let expression = r###"(countryCode=NL or countryCode=DE) 
+    AND uid in (121321,2312312,231231) 
+    and role in (Admin, "Super admin")
+    and (uid not in (231231) or uid <= 0) 
+    and !(street_name='Random street 1' and countryCode=NL)"###;
+
+    let map = HashMap::from([
+        ("countryCode", "DE"),
+        ("uid", "2312312"),
+        ("role", "Super admin"),
+        ("street_name", "Random street 2"),
+    ]);
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, &expression)
+                .expect("Parse error"),
+            &map
+        ),
+        true
+    );
+}
