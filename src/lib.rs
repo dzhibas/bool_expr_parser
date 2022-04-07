@@ -112,12 +112,12 @@ fn comparison_helper(
 /// let map = HashMap::from([("a", "b"), ("e", "f")]);
 /// assert_eq!(eval(parsed, &map), true);
 /// ```
-pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
+pub fn eval(pairs: Pairs<Rule>, variable_map: &HashMap<&str, &str>) -> bool {
     let mut output = false;
-    let mut logic_or = LogicExpr::Or;
+    let mut logic_expr = LogicExpr::Or;
     let mut negate = false;
 
-    for pair in expr {
+    for pair in pairs {
         match pair.as_rule() {
             Rule::pair => {
                 let mut inner_rules = pair.into_inner();
@@ -132,13 +132,13 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                         let rule = pair_rule.as_rule();
                         let val = pair_rule.as_str();
 
-                        if map.contains_key(var) {
-                            let v = *map.get(var).unwrap();
+                        if variable_map.contains_key(var) {
+                            let v = *variable_map.get(var).unwrap();
                             match op {
-                                ComparisonExpr::Eq => logic_op(&logic_or, output, val == v),
-                                ComparisonExpr::NotEq => logic_op(&logic_or, output, val != v),
+                                ComparisonExpr::Eq => logic_op(&logic_expr, output, val == v),
+                                ComparisonExpr::NotEq => logic_op(&logic_expr, output, val != v),
                                 ComparisonExpr::More => comparison_helper(
-                                    &logic_or,
+                                    &logic_expr,
                                     output,
                                     v,
                                     val,
@@ -146,7 +146,7 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                     ComparisonExpr::More,
                                 ),
                                 ComparisonExpr::MoreEq => comparison_helper(
-                                    &logic_or,
+                                    &logic_expr,
                                     output,
                                     v,
                                     val,
@@ -154,7 +154,7 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                     ComparisonExpr::MoreEq,
                                 ),
                                 ComparisonExpr::Less => comparison_helper(
-                                    &logic_or,
+                                    &logic_expr,
                                     output,
                                     v,
                                     val,
@@ -162,7 +162,7 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                     ComparisonExpr::Less,
                                 ),
                                 ComparisonExpr::LessEq => comparison_helper(
-                                    &logic_or,
+                                    &logic_expr,
                                     output,
                                     v,
                                     val,
@@ -171,7 +171,7 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                 ),
                             }
                         } else {
-                            logic_op(&logic_or, output, false)
+                            logic_op(&logic_expr, output, false)
                         }
                     }
                     Rule::array_expr => {
@@ -184,20 +184,20 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                                 let inner3_value = p.as_str();
                                 values.push(inner3_value);
                             }
-                            if map.contains_key(var) {
-                                let v = *map.get(var).unwrap();
+                            if variable_map.contains_key(var) {
+                                let v = *variable_map.get(var).unwrap();
                                 match op {
                                     ArrayExpr::In => {
-                                        logic_op(&logic_or, output, values.contains(&v))
+                                        logic_op(&logic_expr, output, values.contains(&v))
                                     }
                                     ArrayExpr::NotIn => {
-                                        logic_op(&logic_or, output, !values.contains(&v))
+                                        logic_op(&logic_expr, output, !values.contains(&v))
                                     }
                                 }
                             } else {
                                 match op {
-                                    ArrayExpr::In => logic_op(&logic_or, output, false),
-                                    ArrayExpr::NotIn => logic_op(&logic_or, output, true),
+                                    ArrayExpr::In => logic_op(&logic_expr, output, false),
+                                    ArrayExpr::NotIn => logic_op(&logic_expr, output, true),
                                 }
                             }
                         } else {
@@ -207,24 +207,20 @@ pub fn eval(expr: Pairs<Rule>, map: &HashMap<&str, &str>) -> bool {
                     _ => unreachable!(),
                 }
             }
-            Rule::logic_op => {
-                logic_or = LogicExpr::from_str(pair.as_str());
-            }
-            Rule::opNegate => {
-                negate = true;
-            }
+            Rule::logic_op => logic_expr = LogicExpr::from_str(pair.as_str()),
+            Rule::negate_op => negate = true,
             Rule::scope => {
-                let out_of_scope = eval(pair.into_inner(), &map);
-                output = logic_op(&logic_or, output, out_of_scope)
+                let scope_output = eval(pair.into_inner(), &variable_map);
+                output = logic_op(&logic_expr, output, scope_output)
             }
             Rule::EOI => (),
             _ => unreachable!(),
         }
     }
-    if negate {
-        !output
-    } else {
-        output
+
+    match negate {
+        true => !output,
+        false => output,
     }
 }
 

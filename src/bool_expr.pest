@@ -13,7 +13,7 @@ op = { "==" | "=" | "<=" | ">=" | ">" | "<" | "!=" }
 value_expr = { op ~ value }
 pair = { var ~ (value_expr|array_expr) }
 logic_op = @{"and"|"AND"|"or"|"OR"}
-opNegate = { "!" }
-scope = { opNegate? ~ "(" ~ pair ~ (logic_op ~ pair)* ~ ")" }
+negate_op = { "!" }
+scope = { negate_op? ~ "(" ~ pair ~ (logic_op ~ pair)* ~ ")" }
 pair_expr = _{ (pair|scope) }
 main = _{ SOI ~ pair_expr ~ (logic_op ~ pair_expr)* ~ EOI }
