@@ -19,8 +19,8 @@ enum ComparisonExpr {
 }
 
 impl ComparisonExpr {
-    fn from_str(s: &str) -> Self {
-        match s {
+    fn from_str(expr: &str) -> Self {
+        match expr {
             "==" | "=" => ComparisonExpr::Eq,
             ">" => ComparisonExpr::More,
             ">=" => ComparisonExpr::MoreEq,
@@ -37,8 +37,8 @@ enum ArrayExpr {
 }
 
 impl ArrayExpr {
-    fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
+    fn from_str(expr: &str) -> Self {
+        match expr.to_lowercase().as_str() {
             "in" => ArrayExpr::In,
             "not in" => ArrayExpr::NotIn,
             _ => unreachable!(),
@@ -52,8 +52,8 @@ enum LogicExpr {
 }
 
 impl LogicExpr {
-    fn from_str(logic: &str) -> Self {
-        match logic.to_lowercase().as_str() {
+    fn from_str(expr: &str) -> Self {
+        match expr.to_lowercase().as_str() {
             "and" => LogicExpr::And,
             "or" => LogicExpr::Or,
             _ => unreachable!(),
@@ -69,29 +69,34 @@ fn logic_op(op: &LogicExpr, value_a: bool, value_b: bool) -> bool {
     }
 }
 
+/// helper function for comparisons >, <, >=, <=
 fn comparison_helper(
-    logic_or: &LogicExpr,
-    output: bool,
-    v: &str,
-    val: &str,
-    rule: Rule,
-    comp: ComparisonExpr,
+    op: &LogicExpr,
+    bool_left: bool,
+    value_a: &str,
+    value_b: &str,
+    pair_rule: Rule,
+    comparsion_expr: ComparisonExpr,
 ) -> bool {
-    let out = match rule {
+    let bool_right = match pair_rule {
         Rule::number => {
-            let v1: i64 = v.to_string().parse().expect("cannot parse string to int");
-            let v2: i64 = val.to_string().parse().unwrap();
-            match comp {
-                ComparisonExpr::More => v1 > v2,
-                ComparisonExpr::MoreEq => v1 >= v2,
-                ComparisonExpr::Less => v1 < v2,
-                ComparisonExpr::LessEq => v1 <= v2,
+            // @TODO - handle int parse exceptions gracefully so it return false in case cannot be parsed
+            let v_left: i64 = value_a
+                .to_string()
+                .parse()
+                .expect("cannot parse string to int");
+            let v_right: i64 = value_b.to_string().parse().unwrap();
+            match comparsion_expr {
+                ComparisonExpr::More => v_left > v_right,
+                ComparisonExpr::MoreEq => v_left >= v_right,
+                ComparisonExpr::Less => v_left < v_right,
+                ComparisonExpr::LessEq => v_left <= v_right,
                 _ => false,
             }
         }
         _ => false,
     };
-    logic_op(&logic_or, output, out)
+    logic_op(&op, bool_left, bool_right)
 }
 
 /// bool expression evaluation function
