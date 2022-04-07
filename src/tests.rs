@@ -1,5 +1,5 @@
 use super::*;
-use pest::{Parser};
+use pest::Parser;
 
 #[test]
 fn test_negate_test() {
@@ -273,8 +273,7 @@ fn test_in_readme_documentation() {
     ]);
     assert_eq!(
         eval(
-            BoolExprParser::parse(Rule::main, &expression)
-                .expect("Parse error"),
+            BoolExprParser::parse(Rule::main, &expression).expect("Parse error"),
             &map
         ),
         true

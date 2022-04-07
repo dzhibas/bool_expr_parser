@@ -24,6 +24,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bool_expr_parser"
+version = "0.3.7"
+dependencies = [
+ "pest",
+ "pest_derive",
+]
+
+[[package]]
 name = "byte-tools"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -70,14 +78,6 @@ name = "opaque-debug"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c"
-
-[[package]]
-name = "parser"
-version = "0.3.6"
-dependencies = [
- "pest",
- "pest_derive",
-]
 
 [[package]]
 name = "pest"

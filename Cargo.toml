@@ -1,6 +1,6 @@
 [package]
-name = "parser"
-version = "0.3.6"
+name = "bool_expr_parser"
+version = "0.3.7"
 edition = "2021"
 
 [dependencies]
