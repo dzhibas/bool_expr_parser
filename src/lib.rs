@@ -120,52 +120,59 @@ pub fn eval(pairs: Pairs<Rule>, variable_map: &HashMap<&str, &str>) -> bool {
     for pair in pairs {
         match pair.as_rule() {
             Rule::pair => {
-                let mut inner_rules = pair.into_inner();
-                let var = inner_rules.next().unwrap().as_str();
-                let expression = inner_rules.next().unwrap();
+                let mut inner_pairs = pair.into_inner();
+                let var_name = inner_pairs.next().unwrap().as_str();
+                let value_expression = inner_pairs.next().unwrap();
 
-                output = match expression.as_rule() {
+                output = match value_expression.as_rule() {
                     Rule::value_expr => {
-                        let mut inner2_rules = expression.into_inner();
-                        let op = ComparisonExpr::from_str(inner2_rules.next().unwrap().as_str());
-                        let pair_rule = inner2_rules.next().unwrap().into_inner().next().unwrap();
-                        let rule = pair_rule.as_rule();
-                        let val = pair_rule.as_str();
+                        let mut inner_2_pairs = value_expression.into_inner();
+                        let op = ComparisonExpr::from_str(inner_2_pairs.next().unwrap().as_str());
+                        let inner_2_pair =
+                            inner_2_pairs.next().unwrap().into_inner().next().unwrap();
+                        let rule = inner_2_pair.as_rule();
+                        let rule_value = inner_2_pair.as_str();
 
-                        if variable_map.contains_key(var) {
-                            let v = *variable_map.get(var).unwrap();
+                        if variable_map.contains_key(var_name) {
+                            let incoming_value = *variable_map.get(var_name).unwrap();
                             match op {
-                                ComparisonExpr::Eq => logic_op(&logic_expr, output, val == v),
-                                ComparisonExpr::NotEq => logic_op(&logic_expr, output, val != v),
+                                ComparisonExpr::Eq => {
+                                    logic_op(&logic_expr, output, rule_value == incoming_value)
+                                }
+
+                                ComparisonExpr::NotEq => {
+                                    logic_op(&logic_expr, output, rule_value != incoming_value)
+                                }
+
                                 ComparisonExpr::More => comparison_helper(
                                     &logic_expr,
                                     output,
-                                    v,
-                                    val,
+                                    incoming_value,
+                                    rule_value,
                                     rule,
                                     ComparisonExpr::More,
                                 ),
                                 ComparisonExpr::MoreEq => comparison_helper(
                                     &logic_expr,
                                     output,
-                                    v,
-                                    val,
+                                    incoming_value,
+                                    rule_value,
                                     rule,
                                     ComparisonExpr::MoreEq,
                                 ),
                                 ComparisonExpr::Less => comparison_helper(
                                     &logic_expr,
                                     output,
-                                    v,
-                                    val,
+                                    incoming_value,
+                                    rule_value,
                                     rule,
                                     ComparisonExpr::Less,
                                 ),
                                 ComparisonExpr::LessEq => comparison_helper(
                                     &logic_expr,
                                     output,
-                                    v,
-                                    val,
+                                    incoming_value,
+                                    rule_value,
                                     rule,
                                     ComparisonExpr::LessEq,
                                 ),
@@ -175,27 +182,32 @@ pub fn eval(pairs: Pairs<Rule>, variable_map: &HashMap<&str, &str>) -> bool {
                         }
                     }
                     Rule::array_expr => {
-                        let mut inner2_rules = expression.into_inner();
-                        let op = ArrayExpr::from_str(inner2_rules.next().unwrap().as_str());
-                        let inner3_rules = inner2_rules.next().unwrap();
-                        if inner3_rules.as_rule() == Rule::array {
-                            let mut values: Vec<&str> = Vec::new();
-                            for p in inner3_rules.into_inner() {
+                        let mut inner_2_pairs = value_expression.into_inner();
+                        let array_expr =
+                            ArrayExpr::from_str(inner_2_pairs.next().unwrap().as_str());
+                        let inner_3_pairs = inner_2_pairs.next().unwrap();
+                        if inner_3_pairs.as_rule() == Rule::array {
+                            let mut array_values: Vec<&str> = Vec::new();
+                            for p in inner_3_pairs.into_inner() {
                                 let inner3_value = p.as_str();
-                                values.push(inner3_value);
+                                array_values.push(inner3_value);
                             }
-                            if variable_map.contains_key(var) {
-                                let v = *variable_map.get(var).unwrap();
-                                match op {
-                                    ArrayExpr::In => {
-                                        logic_op(&logic_expr, output, values.contains(&v))
-                                    }
-                                    ArrayExpr::NotIn => {
-                                        logic_op(&logic_expr, output, !values.contains(&v))
-                                    }
+                            if variable_map.contains_key(var_name) {
+                                let incomming_value = *variable_map.get(var_name).unwrap();
+                                match array_expr {
+                                    ArrayExpr::In => logic_op(
+                                        &logic_expr,
+                                        output,
+                                        array_values.contains(&incomming_value),
+                                    ),
+                                    ArrayExpr::NotIn => logic_op(
+                                        &logic_expr,
+                                        output,
+                                        !array_values.contains(&incomming_value),
+                                    ),
                                 }
                             } else {
-                                match op {
+                                match array_expr {
                                     ArrayExpr::In => logic_op(&logic_expr, output, false),
                                     ArrayExpr::NotIn => logic_op(&logic_expr, output, true),
                                 }

@@ -38,11 +38,3 @@ assert_eq!(
 ```
 
 Please see test in src/test.rs test_in_readme_documentation()
-
-# TODO
-
-- [x] need to implement op (>, <, <=, >=)
-- [x] implement arrays IN and negated NOT IN
-- [x] implement str and string_str
-- [ ] cleanup code
-- [x] make reusable library
