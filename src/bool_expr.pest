@@ -1,12 +1,12 @@
 WHITESPACE=_{" "|"\t"|"\r"|"\n"}
 quotes = _{"\"" | "'"}
 var = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC|"_")* }
-string = { ASCII_ALPHANUMERIC+ }
-str = @{ ASCII_ALPHANUMERIC+ }
+string = { (ASCII_ALPHANUMERIC|"-"|"_"|"/"|" "|"&")+ }
+str = @{ (ASCII_ALPHANUMERIC|"-"|"_")+ }
 string_value = _{ ((quotes ~ string ~ quotes) | str) }
 number = @{ ASCII_DIGIT+ }
 op_array = { (^"not in"|^"in") }
-array = { "(" ~ (number|string_value) ~ ("," ~ (number|string_value))* ~")"}
+array = { "(" ~ (number|string_value) ~ ("," ~ (number|string_value))* ~ ")" }
 array_expr = { op_array ~ array }
 value = { number | string_value}
 op = { "==" | "=" | "<=" | ">=" | ">" | "<" | "!=" }
