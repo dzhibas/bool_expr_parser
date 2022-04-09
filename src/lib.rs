@@ -80,7 +80,6 @@ fn comparison_helper(
 ) -> bool {
     let bool_right = match pair_rule {
         Rule::number => {
-            // @TODO - handle int parse exceptions gracefully so it return false in case cannot be parsed
             let v_left: i64 = value_a
                 .to_string()
                 .parse()

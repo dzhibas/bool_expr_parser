@@ -4,13 +4,16 @@ Boolean expresion parser and evaluation function for feature flagging - flipper
 
 It parses expression and given input hashmap evaluates and returns true/false
 
-Example of expression you can parse and evaluate:
+Example of complex expression you can parse and evaluate:
 
 ```
 (countryCode=NL or countryCode=DE) 
     AND uid in (121321,2312312,231231) 
     and role in (Admin, "Super admin")
-    and (uid not in (231231) or uid <= 0) 
+    and (
+        uid not in ( ca3ed35c-114f-488d-82b7-7c4d1bd5cbcd,  b83f48af-ecb6-4b50-9d5e-b690db2a332b ) 
+        or uid <= 0
+    ) 
     and !(street_name='Random street 1' and countryCode=NL)
 ```
 

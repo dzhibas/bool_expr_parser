@@ -262,7 +262,10 @@ fn test_in_readme_documentation() {
     let expression = r###"(countryCode=NL or countryCode=DE) 
     AND uid in (121321,2312312,231231) 
     and role in (Admin, "Super admin")
-    and (uid not in (231231) or uid <= 0) 
+    and (
+        uid not in ( ca3ed35c-114f-488d-82b7-7c4d1bd5cbcd,  b83f48af-ecb6-4b50-9d5e-b690db2a332b ) 
+        or uid <= 0
+    ) 
     and !(street_name='Random street 1' and countryCode=NL)"###;
 
     let map = HashMap::from([
@@ -299,5 +302,16 @@ fn test_realworld_demo_values() {
             &map
         ),
         true
+    );
+}
+
+#[test]
+fn test_number_parsing_handling_error_scenario() {
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "a > \"b\"").expect("Parse error"),
+            &HashMap::from([("a", "20"),])
+        ),
+        false
     );
 }
