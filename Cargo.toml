@@ -1,11 +1,14 @@
 [package]
 name = "bool_expr_parser"
-version = "0.3.12"
+description = "Boolean expresion parser and evaluation library"
+version = "0.3.13"
 edition = "2021"
 readme = "README.md"
 repository = "https://github.com/dzhibas/bool_expr_parser"
 authors = ["Nikolajus Krauklis <nikolajus@gmail.com>"]
+keywords = ["parser", "bool_expr_parser", "boolean", "expression", "parser"]
+license = "MIT"
 
 [dependencies]
-pest = "*"
-pest_derive = "*"
+pest = "^2.1"
+pest_derive = "^2.1"
