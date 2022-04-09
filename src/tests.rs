@@ -284,7 +284,7 @@ fn test_in_readme_documentation() {
 fn test_realworld_demo_values() {
     let rule = r###"accountRole in (Admin,admin,"Admin/Order Manager")
     and account_country_code in (LT , NL, DE, GB, US)
-    and account_uuid in ("543987b0-e69f-41ec-9a68-cfc5cfb15afe", "6133b8d6-4078-4270-9a68-fa0ac78bf512")
+    and account_uuid in (543987b0-e69f-41ec-9a68-cfc5cfb15afe, 6133b8d6-4078-4270-9a68-fa0ac78bf512)
     and accountType in ("Some Corporate & Managament Type", Corporate , Managament)"###;
 
     let map = HashMap::from([
