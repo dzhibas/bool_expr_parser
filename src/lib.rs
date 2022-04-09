@@ -136,45 +136,25 @@ pub fn eval(pairs: Pairs<Rule>, variable_map: &HashMap<&str, &str>) -> bool {
                         if variable_map.contains_key(var_name) {
                             let incoming_value = *variable_map.get(var_name).unwrap();
                             match op {
-                                ComparisonExpr::Eq => {
-                                    logic_op(&logic_expr, output, rule_value == incoming_value)
-                                }
-
-                                ComparisonExpr::NotEq => {
-                                    logic_op(&logic_expr, output, rule_value != incoming_value)
-                                }
-
-                                ComparisonExpr::More => comparison_helper(
+                                ComparisonExpr::Eq | ComparisonExpr::NotEq => logic_op(
                                     &logic_expr,
                                     output,
-                                    incoming_value,
-                                    rule_value,
-                                    rule,
-                                    ComparisonExpr::More,
+                                    match op {
+                                        ComparisonExpr::Eq => rule_value == incoming_value,
+                                        ComparisonExpr::NotEq => rule_value != incoming_value,
+                                        _ => unreachable!(),
+                                    },
                                 ),
-                                ComparisonExpr::MoreEq => comparison_helper(
+                                ComparisonExpr::More
+                                | ComparisonExpr::MoreEq
+                                | ComparisonExpr::Less
+                                | ComparisonExpr::LessEq => comparison_helper(
                                     &logic_expr,
                                     output,
                                     incoming_value,
                                     rule_value,
                                     rule,
-                                    ComparisonExpr::MoreEq,
-                                ),
-                                ComparisonExpr::Less => comparison_helper(
-                                    &logic_expr,
-                                    output,
-                                    incoming_value,
-                                    rule_value,
-                                    rule,
-                                    ComparisonExpr::Less,
-                                ),
-                                ComparisonExpr::LessEq => comparison_helper(
-                                    &logic_expr,
-                                    output,
-                                    incoming_value,
-                                    rule_value,
-                                    rule,
-                                    ComparisonExpr::LessEq,
+                                    op,
                                 ),
                             }
                         } else {
