@@ -49,6 +49,24 @@ fn test_variable_with_underscore() {
         ),
         true
     );
+
+    // quoted string
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "country_code =   'IL'").expect("Parse error"),
+            &map
+        ),
+        true
+    );
+
+    // single quoted string
+    assert_eq!(
+        eval(
+            BoolExprParser::parse(Rule::main, "country_code =  \"IL\"").expect("Parse error"),
+            &map
+        ),
+        true
+    );
 }
 
 #[test]
