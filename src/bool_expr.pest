@@ -1,19 +1,19 @@
-WHITESPACE=_{" "|"\t"|"\r"|"\n"}
-quotes = _{"\"" | "'"}
-var = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC|"_")* }
-string = { (ASCII_ALPHANUMERIC|"-"|"_"|"/"|" "|"&")+ }
-str = @{ (ASCII_ALPHANUMERIC|"-"|"_")+ }
+WHITESPACE   = _{ " " | "\t" | "\r" | "\n" }
+quotes       = _{ "\"" | "'" }
+var          = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+string       =  { (ASCII_ALPHANUMERIC | "-" | "_" | "/" | " " | "&")+ }
+str          = @{ (ASCII_ALPHANUMERIC | "-" | "_")+ }
 string_value = _{ ((quotes ~ string ~ quotes) | str) }
-number = @{ ASCII_DIGIT+ ~ !(ASCII_ALPHA|"-"|"_"|"/"|"&") }
-op_array = { (^"not in"|^"in") }
-array = { "(" ~ (number|string_value) ~ ("," ~ (number|string_value))* ~ ")" }
-array_expr = { op_array ~ array }
-value = { number | string_value}
-op = { "==" | "=" | "<=" | ">=" | ">" | "<" | "!=" }
-value_expr = { op ~ value }
-pair = { var ~ (value_expr|array_expr) }
-logic_op = @{"and"|"AND"|"or"|"OR"}
-negate_op = { "!" }
-scope = { negate_op? ~ "(" ~ pair ~ (logic_op ~ pair)* ~ ")" }
-pair_expr = _{ (pair|scope) }
-main = _{ SOI ~ pair_expr ~ (logic_op ~ pair_expr)* ~ EOI }
+number       = @{ ASCII_DIGIT+ ~ !(ASCII_ALPHA | "-" | "_" | "/" | "&") }
+op_array     =  { (^"not in" | ^"in") }
+array        =  { "(" ~ (number | string_value) ~ ("," ~ (number | string_value))* ~ ")" }
+array_expr   =  { op_array ~ array }
+value        =  { number | string_value }
+op           =  { "==" | "=" | "<=" | ">=" | ">" | "<" | "!=" }
+value_expr   =  { op ~ value }
+pair         =  { var ~ (value_expr | array_expr) }
+logic_op     = @{ "and" | "AND" | "or" | "OR" }
+negate_op    =  { "!" }
+scope        =  { negate_op? ~ "(" ~ pair ~ (logic_op ~ pair)* ~ ")" }
+pair_expr    = _{ (pair | scope) }
+main         = _{ SOI ~ pair_expr ~ (logic_op ~ pair_expr)* ~ EOI }

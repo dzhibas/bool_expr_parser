@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "bool_expr_parser"
-version = "0.3.13"
+version = "0.3.14"
 dependencies = [
  "pest",
  "pest_derive",
